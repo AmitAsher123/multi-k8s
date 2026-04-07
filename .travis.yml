@@ -2,9 +2,26 @@ dist: focal
 sudo: required
 services:
   - docker
+env:
+  global:
+    - SHA=$(git rev-parse HEAD)
+    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
 before_install: 
   - openssl aes-256-cbc -K $encrypted_9f3b5599b056_key -iv $encrypted_9f3b5599b056_iv -in service-account.json.enc -out service-account.json -d
   - curl https://sdk.cloud.com | bash > /dev/null;
   - source $HOME/google-sdk/path.bash.inc
   - gpcloud components update kubectl 
   - gcloud auth activate-service-account --key-file service-acount.json
+  - gcloud config set project project-1d35c3  d5-e45f-4fdd-b16
+  - gcloud config set comput/region us-central1
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker build -t stephengrider/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+ - docker run 0e CI=true stephengrider/react-test npm test
+
+deploy:
+  provider: script
+  script: bash ./deploy.sh
+  on:
+    branch: masterSS
